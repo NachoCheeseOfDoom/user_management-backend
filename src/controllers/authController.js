@@ -57,7 +57,15 @@ exports.login = (req, res) => {
                 }
             });
 
-            res.status(200).json({ token });
+            res.status(200).json({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    lastLogin: user.last_login_time,
+                }
+            });
         });
     });
 
