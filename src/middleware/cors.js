@@ -1,7 +1,7 @@
 const cors = require("cors");
 
 const corsOptions = {
-    origin: "http://localhost:5173",
+    origin: "https://fascinating-capybara-117da0.netlify.app/",
     methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
 };
