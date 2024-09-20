@@ -10,8 +10,8 @@ exports.register = (req, res) => {
             return res.status(500).json({ error: 'Error hashing password' });
         }
 
-        const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-        connection.query(query, [name, email, hashedPassword], (err, results) => {
+        const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
+        connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
             if (err) {
                 return res.status(500).json({ error: 'Error inserting user' });
             }
@@ -19,6 +19,7 @@ exports.register = (req, res) => {
         });
     });
 };
+
 
 exports.login = (req, res) => {
     const { email, password } = req.body;
@@ -47,9 +48,9 @@ exports.login = (req, res) => {
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
-
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+            // Update the last login time
             const queryUpdateDate = 'UPDATE users SET last_login_time=NOW() WHERE id = ?';
             connection.query(queryUpdateDate, [user.id], (err, results) => {
                 if (err) {
@@ -57,17 +58,7 @@ exports.login = (req, res) => {
                 }
             });
 
-            res.status(200).json({
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    lastLogin: user.last_login_time,
-                }
-            });
+            res.status(200).json({ token });
         });
     });
-
-
 };
