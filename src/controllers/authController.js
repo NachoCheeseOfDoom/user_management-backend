@@ -24,8 +24,19 @@ exports.register = (req, res) => {
 exports.login = (req, res) => {
     const { email, password } = req.body;
 
+    connection.query('SELECT 1', (err, results) => {
+        if (err) {
+            console.log('Database connection error', err);
+        } else {
+            console.log('Database connection successful');
+        }
+    });
+
+
     const query = 'SELECT * FROM users WHERE email = ?';
     connection.query(query, [email], (err, results) => {
+        console.log('restuls 1', results);
+
         if (err) {
             return res.status(500).json({ error: 'Error fetching user' });
         }
@@ -49,9 +60,12 @@ exports.login = (req, res) => {
             }
 
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            console.log('JWT: ', process.env.JWT_SECRET);
+
 
             const queryUpdateDate = 'UPDATE users SET last_login_time=NOW() WHERE id = ?';
             connection.query(queryUpdateDate, [user.id], (err, results) => {
+                console.log('restuls 2', results);
                 if (err) {
                     console.log(err);
                 }
