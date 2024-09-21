@@ -2,35 +2,40 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const connection = require('../config/db');
 
-exports.register = (req, res) => {
+exports.register = async (req, res) => {
     const { name, email, password } = req.body;
 
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).json({ error: 'Error hashing password' });
+    // Validate inputs
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: "All fields are required." });
+    }
+
+    try {
+        // Check for existing user
+        const [existingUser] = await connection.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (existingUser.length > 0) {
+            return res.status(409).json({ error: "Email already exists" });
         }
 
-        const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
-        connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
-            if (err) {
-                if (err.code === 'ER_DUP_ENTRY') { // Check for duplicate entry error code
-                    return res.status(400).json({ error: 'Email already exists' });
-                }
-                return res.status(500).json({ error: 'Error inserting user' });
-            }
-            res.status(201).json({ message: 'User registered' });
-        });
-    });
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await connection.query('INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())', [name, email, hashedPassword, 'active']);
+
+        res.status(201).json({ message: "User registered successfully!" });
+    } catch (error) {
+        console.error("Registration error:", error); // Log detailed error
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: "Email already exists" });
+        }
+        res.status(500).json({ error: "Internal server error." });
+    }
 };
-
-
 
 exports.login = (req, res) => {
     const { email, password } = req.body;
 
     const query = 'SELECT * FROM users WHERE email = ?';
     connection.query(query, [email], (err, results) => {
-
         if (err) {
             return res.status(500).json({ error: 'Error fetching user' });
         }
@@ -55,15 +60,13 @@ exports.login = (req, res) => {
 
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-
             const queryUpdateDate = 'UPDATE users SET last_login_time=NOW() WHERE id = ?';
-            connection.query(queryUpdateDate, [user.id], (err, results) => {
+            connection.query(queryUpdateDate, [user.id], (err) => {
                 if (err) {
                     console.log(err);
                 }
             });
 
-            // res.status(200).json({ token });
             res.status(200).json({
                 token,
                 user: {
