@@ -9,7 +9,6 @@ exports.register = (req, res) => {
     const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
     connection.query(checkEmailQuery, [email], (err, results) => {
         if (err) {
-            console.error("Database error during email check:", err);
             return res.status(500).json({ error: 'Error checking email' });
         }
 
