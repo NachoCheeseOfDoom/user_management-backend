@@ -4,6 +4,7 @@ const connection = require('../config/db');
 
 exports.register = (req, res) => {
     const { name, email, password } = req.body;
+    console.log("Incoming registration data:", req.body);
 
     if (email.length > 255) {
         return res.status(400).json({ error: 'Email must be 255 characters or less.' });
@@ -17,6 +18,7 @@ exports.register = (req, res) => {
         const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
         connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
             if (err) {
+                console.error("Database insertion error:", err); // Log detailed error
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.status(400).json({ error: 'Email already exists' });
                 }
@@ -26,7 +28,6 @@ exports.register = (req, res) => {
         });
     });
 };
-
 
 
 
