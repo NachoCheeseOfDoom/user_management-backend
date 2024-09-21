@@ -5,6 +5,10 @@ const connection = require('../config/db');
 exports.register = (req, res) => {
     const { name, email, password } = req.body;
 
+    if (email.length > 255) {
+        return res.status(400).json({ error: 'Email must be 255 characters or less.' });
+    }
+
     bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) {
             return res.status(500).json({ error: 'Error hashing password' });
@@ -13,7 +17,7 @@ exports.register = (req, res) => {
         const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
         connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
             if (err) {
-                if (err.code === 'ER_DUP_ENTRY') { // Check for duplicate entry error code
+                if (err.code === 'ER_DUP_ENTRY') {
                     return res.status(400).json({ error: 'Email already exists' });
                 }
                 return res.status(500).json({ error: 'Error inserting user' });
@@ -22,6 +26,7 @@ exports.register = (req, res) => {
         });
     });
 };
+
 
 
 
