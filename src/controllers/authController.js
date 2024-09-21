@@ -13,12 +13,16 @@ exports.register = (req, res) => {
         const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
         connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
             if (err) {
+                if (err.code === 'ER_DUP_ENTRY') { // Check for duplicate entry error code
+                    return res.status(400).json({ error: 'Email already exists' });
+                }
                 return res.status(500).json({ error: 'Error inserting user' });
             }
             res.status(201).json({ message: 'User registered' });
         });
     });
 };
+
 
 
 exports.login = (req, res) => {
