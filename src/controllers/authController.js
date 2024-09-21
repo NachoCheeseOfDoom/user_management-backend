@@ -50,7 +50,6 @@ exports.login = (req, res) => {
 
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-            // Update the last login time
             const queryUpdateDate = 'UPDATE users SET last_login_time=NOW() WHERE id = ?';
             connection.query(queryUpdateDate, [user.id], (err, results) => {
                 if (err) {
@@ -58,7 +57,16 @@ exports.login = (req, res) => {
                 }
             });
 
-            res.status(200).json({ token });
+            // res.status(200).json({ token });
+            res.status(200).json({
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    lastLogin: user.last_login_time,
+                }
+            });
         });
     });
 };
