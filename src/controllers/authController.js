@@ -6,7 +6,6 @@ exports.register = (req, res) => {
     const { name, email, password } = req.body;
     console.log("Incoming registration data:", req.body);
 
-    // Check if the email already exists
     const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
     connection.query(checkEmailQuery, [email], (err, results) => {
         if (err) {
@@ -18,7 +17,6 @@ exports.register = (req, res) => {
             return res.status(400).json({ error: 'Email already exists' });
         }
 
-        // Proceed with hashing and inserting the user
         bcrypt.hash(password, 10, (err, hashedPassword) => {
             if (err) {
                 return res.status(500).json({ error: 'Error hashing password' });
@@ -77,7 +75,6 @@ exports.login = (req, res) => {
                 }
             });
 
-            // res.status(200).json({ token });
             res.status(200).json({
                 token,
                 user: {
