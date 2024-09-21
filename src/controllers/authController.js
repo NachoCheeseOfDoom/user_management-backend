@@ -6,28 +6,36 @@ exports.register = (req, res) => {
     const { name, email, password } = req.body;
     console.log("Incoming registration data:", req.body);
 
-    if (email.length > 255) {
-        return res.status(400).json({ error: 'Email must be 255 characters or less.' });
-    }
-
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
+    // Check if the email already exists
+    const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
+    connection.query(checkEmailQuery, [email], (err, results) => {
         if (err) {
-            return res.status(500).json({ error: 'Error hashing password' });
+            console.error("Database error during email check:", err);
+            return res.status(500).json({ error: 'Error checking email' });
         }
 
-        const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
-        connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+
+        // Proceed with hashing and inserting the user
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
             if (err) {
-                console.error("Database insertion error:", err); // Log detailed error
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({ error: 'Email already exists' });
-                }
-                return res.status(500).json({ error: 'Error inserting user' });
+                return res.status(500).json({ error: 'Error hashing password' });
             }
-            res.status(201).json({ message: 'User registered' });
+
+            const query = 'INSERT INTO users (name, email, password, status, registration_time) VALUES (?, ?, ?, ?, NOW())';
+            connection.query(query, [name, email, hashedPassword, 'active'], (err, results) => {
+                if (err) {
+                    console.error("Database insertion error:", err);
+                    return res.status(500).json({ error: 'Error inserting user' });
+                }
+                res.status(201).json({ message: 'User registered' });
+            });
         });
     });
 };
+
 
 
 
